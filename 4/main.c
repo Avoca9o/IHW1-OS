@@ -8,6 +8,8 @@
 #include <fcntl.h>
 const size_t SIZE = 5000;
 char buf[SIZE + 1];
+char buf2[SIZE + 1];
+char buf3[SIZE + 1];
 
 int is_good(char ch) {
     if (ch <= 'z' && ch >= 'a' || ch <= 'Z' && ch >= 'A') {
@@ -20,9 +22,9 @@ int is_good(char ch) {
 void reverse(int a, int b)
 {
     while (a < b) {
-        char temp = buf[a];
-        buf[a] = buf[b];
-        buf[b] = temp;
+        char temp = buf2[a];
+        buf2[a] = buf2[b];
+        buf2[b] = temp;
         ++a; --b;
     }
 }
@@ -31,12 +33,12 @@ void reversewords(int length)
 {
     int left = 0;
     while (left < length) {
-        if (is_good(buf[left] == 0)) {
+        if (is_good(buf2[left] == 0)) {
             ++left;
             continue;
         }
         int right = left + 1;
-        while (right < length && is_good(buf[right]) == 1) {
+        while (right < length && is_good(buf2[right]) == 1) {
             ++right;
         }
         reverse(left, right - 1);
@@ -50,7 +52,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     int in = open(argv[1], O_RDONLY);
-    int bytes_read;
+    int bytes_read, bytes_read2, bytes_read3;
 
     if (in == -1) {
         fprintf(stderr, "Cannot open input file.\n");
@@ -86,10 +88,10 @@ int main(int argc, char* argv[]) {
     }
 
     if (fork() == 0) {
-        bytes_read = read(fd1[0], &buf, bytes_read);
+        bytes_read2 = read(fd1[0], &buf2, SIZE);
         close(fd1[0]);
-        reversewords(bytes_read);
-        if (write(fd2[1], buf, bytes_read) == -1) {
+        reversewords(bytes_read2);
+        if (write(fd2[1], buf2, bytes_read2) == -1) {
             fprintf(stderr, "Cannot write in pipe2.\n");
         }
         close(fd2[1]);
@@ -108,8 +110,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (fork() == 0) {
-        bytes_read = read(fd2[0], &buf, bytes_read);
-        write(out, buf, bytes_read);
+        bytes_read3 = read(fd2[0], &buf3, SIZE);
+        write(out, buf3, bytes_read3);
         close(fd2[0]);
         exit(0);
     } else {
