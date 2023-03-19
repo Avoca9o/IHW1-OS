@@ -6,11 +6,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-const size_t SIZE = 5000;
-char buf[SIZE + 1];
+const size_t SIZE = 5000;   // размер буфера
+char buf[SIZE + 1];         // буфера
 char buf2[SIZE + 1];
 char buf3[SIZE + 1];
 
+// функция проверка символа на то, является ли он буквой
 int is_good(char ch) {
     if (ch <= 'z' && ch >= 'a' || ch <= 'Z' && ch >= 'A') {
         return 1;
@@ -19,6 +20,7 @@ int is_good(char ch) {
     }
 }
 
+// функция, переворачивающая одно слово в строке с заданными ограничениями
 void reverse(int a, int b)
 {
     while (a < b) {
@@ -29,6 +31,7 @@ void reverse(int a, int b)
     }
 }
 
+// функция для обработки текста, переворачивает все слова в нем
 void reversewords(int length)
 {
     int left = 0;
@@ -47,30 +50,30 @@ void reversewords(int length)
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
+    if (argc != 3) {        // проверяем колчичество входных аргуентов
         fprintf(stderr, "Wrong number of parameters. You should enter name of input file and output file\n");
         return 0;
     }
-    int in = open(argv[1], O_RDONLY);
+    int in = open(argv[1], O_RDONLY);           // открываем входной файл
     int bytes_read, bytes_read2, bytes_read3;
 
-    if (in == -1) {
+    if (in == -1) {                             // проверка корректности открытия
         fprintf(stderr, "Cannot open input file.\n");
         return 0;
     }
 
-    char* name1 = "/tmp/fifo1";
+    char* name1 = "/tmp/fifo1";                 // имена именованных каналов
     char* name2 = "/tmp/fifo2";
-    mkfifo("/tmp/fifo1", 0666);
+    mkfifo("/tmp/fifo1", 0666);                 // привязка именованных каналов к программе
     mkfifo("/tmp/fifo2", 0666);
-    int fd1 = open(name1, O_RDWR | O_CREAT);
-    if (fd1 < 0) {
+    int fd1 = open(name1, O_RDWR | O_CREAT);    // открытия первого именвоанного канала
+    if (fd1 < 0) {                              // проверка корректности открытия
         fprintf(stderr, "Cannot open FIFO1.\n");
         return 0;
     }
 
     if (fork() == 0) {
-        bytes_read = read(in, &buf, SIZE);
+        bytes_read = read(in, &buf, SIZE);      // первый дочерний поток - делает свою работу
         if (bytes_read == 0) {
             close(fd1);
             exit(0);
@@ -81,10 +84,10 @@ int main(int argc, char* argv[]) {
         close(fd1);
         exit(0);
     } else {
-        wait(NULL);
+        wait(NULL);                             // родительский поток ждет
     }
 
-    if (bytes_read == 0) {
+    if (bytes_read == 0) {                      // если входных данных нет - заканчиваем работу корректно
         close(fd1);
         unlink(name1);
         unlink(name2);
@@ -92,14 +95,14 @@ int main(int argc, char* argv[]) {
     }
 
     close(in);
-    int fd2 = open(name2, O_RDWR | O_CREAT);
-    if (fd2 < 0) {
+    int fd2 = open(name2, O_RDWR | O_CREAT);    // открываем второй именованный канал для работы
+    if (fd2 < 0) {                              // проверка корректности открытия
         fprintf(stderr, "Cannot open FIFO2.\n");
         return 0;
     }
 
     if (fork() == 0) {
-        bytes_read2 = read(fd1, &buf2, SIZE);
+        bytes_read2 = read(fd1, &buf2, SIZE);   // второй дочерний поток - делает свою работу
         reversewords(bytes_read2);
         if (write(fd2, buf2, bytes_read2) == -1) {
             fprintf(stderr, "Cannot write in pipe2.\n");
@@ -108,17 +111,17 @@ int main(int argc, char* argv[]) {
         close(fd1);
         exit(0);
     } else {
-        wait(NULL);
+        wait(NULL);                             // родительский поток ждет
     }
 
-    int out = open(argv[2], O_RDWR | O_CREAT, 0666);
-    if (out == -1) {
+    int out = open(argv[2], O_RDWR | O_CREAT, 0666);    // открываем файл для вывода результата
+    if (out == -1) {                                    // проверка корректности открытия
         fprintf(stderr, "Cannot open output file.\n");
         return 0;
     }
 
     if (fork() == 0) {
-        bytes_read3 = read(fd2, &buf3, SIZE);
+        bytes_read3 = read(fd2, &buf3, SIZE);   // третий дочерний поток делает свою работу
         write(out, buf3, bytes_read3);
         close(fd1);
         close(fd2);
@@ -129,8 +132,8 @@ int main(int argc, char* argv[]) {
     close(fd1);
     close(fd2);
 
-    unlink(name1);
-    unlink(name2);
+    unlink(name1);                          // отвязываем именованные каналы от программы, 
+    unlink(name2);                          // они больше не нужны
     close(out);
     return 0;
 }

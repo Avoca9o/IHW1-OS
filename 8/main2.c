@@ -6,9 +6,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-const size_t SIZE = 5000;
-char buf[SIZE + 1];
+const size_t SIZE = 5000; // размер буфера
+char buf[SIZE + 1];       // буфер
 
+// функция проверка символа на то является ли он буквой
 int is_good(char ch) {
     if (ch <= 'z' && ch >= 'a' || ch <= 'Z' && ch >= 'A') {
         return 1;
@@ -17,6 +18,7 @@ int is_good(char ch) {
     }
 }
 
+// функция, переворачивающия одно слово в тексте по заданным границам
 void reverse(int a, int b)
 {
     while (a < b) {
@@ -27,6 +29,7 @@ void reverse(int a, int b)
     }
 }
 
+// функция, переворачивающая все слова в тексте
 void reversewords(int length)
 {
     int left = 0;
@@ -45,28 +48,28 @@ void reversewords(int length)
 }
 
 int main() {
-    char* name = "/tmp/fifo";
+    char* name = "/tmp/fifo"; // имя именованного канала
     sleep(1);
     int bytes_read;
-    mkfifo(name, 0666);
+    mkfifo(name, 0666);       // привязка именованного канала
     int fd = open(name, O_RDWR | O_CREAT, 0666);
-    if (fd == -1) {
+    if (fd == -1) {                             // попытка открытия именованного канала
         fprintf(stderr, "Can't open  fifo\n");
         return 0;
     }
 
     if ((bytes_read = read(fd, &buf, SIZE)) == -1 || strcmp(buf, "exit") == 1) {
-        fprintf(stderr, "Can't read fifo\n");
+        fprintf(stderr, "Can't read fifo\n"); // попытка чтения данных из именованного канала
         close(fd);
         unlink(name);
         return 0;
     }
-    reversewords(bytes_read);
-    if (write(fd, buf, bytes_read) == -1) {
+    reversewords(bytes_read);                 // обработка данных
+    if (write(fd, buf, bytes_read) == -1) {     // запись данных обратно в тот же именованный канал
         fprintf(stderr, "Can't write fifo\n");
         return 0;
     }
     close(fd);
-    unlink(name);
+    unlink(name);               // отвязывание именованного канала от программы
     return 0;
 }
